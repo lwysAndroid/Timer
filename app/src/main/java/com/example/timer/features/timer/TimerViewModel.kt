@@ -3,6 +3,7 @@ package com.example.timer.features.timer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.timer.R
+import com.example.timer.core.data.FakeRepository
 import com.example.timer.core.domain.TimerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TimerViewModel @Inject constructor(
-    private val timerUseCase: TimerUseCase
+    private val timerUseCase: TimerUseCase,
+    private val repository: FakeRepository
 ) : ViewModel() {
 
     private val _timerScreenState = MutableStateFlow<TimerViewState>(
@@ -27,6 +29,18 @@ class TimerViewModel @Inject constructor(
 
     val timerScreenState: StateFlow<TimerViewState> = _timerScreenState
 
+    private var counter = 22
+    init {
+        viewModelScope.launch {
+            repository.scores().collect() { currentScore ->
+                _timerScreenState.value = TimerViewState.UpdateTimeAndButtonText(
+                    time = currentScore.toString(),
+                    buttonTextResource = R.string.stop
+                )
+
+            }
+        }
+    }
 
     fun onClickTimerButton() {
         if (timerUseCase.timerIsActive()) {
@@ -43,6 +57,8 @@ class TimerViewModel @Inject constructor(
 
     private fun startTimerAndCollect() {
         viewModelScope.launch {
+//            testMutableStateFlow()
+
             collectAllData()
 //            collectFirstData()
 //            collectNFirstData(numberOfDataToCollect = 5)
@@ -72,6 +88,11 @@ class TimerViewModel @Inject constructor(
             time = firstFiveTimeValue.joinToString { "$it" },
             buttonTextResource = R.string.stop
         )
+    }
+
+    private suspend fun testMutableStateFlow() {
+        repository.emit(counter)
+        counter += 1
     }
 
 
