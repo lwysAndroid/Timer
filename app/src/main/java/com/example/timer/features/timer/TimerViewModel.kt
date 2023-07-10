@@ -7,6 +7,9 @@ import com.example.timer.core.domain.TimerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,14 +43,37 @@ class TimerViewModel @Inject constructor(
 
     private fun startTimerAndCollect() {
         viewModelScope.launch {
-            timerUseCase.timerFlow.collect() { currentTime ->
-                _timerScreenState.value = TimerViewState.UpdateTimeAndButtonText(
-                    time = currentTime.toString(),
-                    buttonTextResource = R.string.stop
-                )
-            }
+            collectAllData()
+//            collectFirstData()
+//            collectNFirstData(numberOfDataToCollect = 5)
         }
     }
+
+    private suspend fun collectAllData() {
+        timerUseCase.timerFlow.collect() { currentTime ->
+            _timerScreenState.value = TimerViewState.UpdateTimeAndButtonText(
+                time = currentTime.toString(),
+                buttonTextResource = R.string.stop
+            )
+        }
+    }
+
+    private suspend fun collectFirstData() {
+        val firstTimeValue = timerUseCase.timerFlow.first()
+        _timerScreenState.value = TimerViewState.UpdateTimeAndButtonText(
+            time = firstTimeValue.toString(),
+            buttonTextResource = R.string.stop
+        )
+    }
+
+    private suspend fun collectNFirstData(numberOfDataToCollect: Int) {
+        val firstFiveTimeValue = timerUseCase.timerFlow.take(count = 5).toList()
+        _timerScreenState.value = TimerViewState.UpdateTimeAndButtonText(
+            time = firstFiveTimeValue.joinToString { "$it" },
+            buttonTextResource = R.string.stop
+        )
+    }
+
 
 }
 
